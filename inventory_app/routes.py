@@ -48,10 +48,15 @@ def _normalize_product(product):
 
 
 def fetch_product_details(barcode=None, name=None):
+    headers = {
+        "User-Agent": "InventoryManagementSystem/1.0 (Python requests)"
+    }
+
     if barcode:
         try:
             response = requests.get(
                 f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json",
+                headers=headers,
                 timeout=10,
             )
         except requests.RequestException:
@@ -60,6 +65,7 @@ def fetch_product_details(barcode=None, name=None):
         if response and getattr(response, "status_code", 200) == 200:
             payload = response.json() or {}
             product = payload.get("product") or payload
+
             if isinstance(product, dict) and (
                 product.get("product_name")
                 or product.get("name")
@@ -78,6 +84,7 @@ def fetch_product_details(barcode=None, name=None):
                     "json": 1,
                     "page_size": 1,
                 },
+                headers=headers,
                 timeout=10,
             )
         except requests.RequestException:
@@ -86,12 +93,15 @@ def fetch_product_details(barcode=None, name=None):
         if response and getattr(response, "status_code", 200) == 200:
             payload = response.json() or {}
             candidates = []
+
             direct_product = payload.get("product")
             if isinstance(direct_product, dict):
                 candidates.append(direct_product)
+
             products = payload.get("products") or []
             if isinstance(products, list):
                 candidates.extend(products)
+
             if not candidates and isinstance(payload, dict) and (
                 payload.get("product_name")
                 or payload.get("name")
